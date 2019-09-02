@@ -1,192 +1,34 @@
 os: linux
-dist: trusty
+dist: bionic
 language: c
 
 git:
   depth: 3
 
-jobs:
-  include:
-    - name: "GCC 4.4"
-      compiler: gcc-4.4
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-4.4
-    - name: "GCC 4.6"
-      compiler: gcc-4.6
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-4.6
-    - name: "GCC 4.7"
-      compiler: gcc-4.7
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-4.7
-    - name: "GCC 4.8"
-      compiler: gcc-4.8
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-4.8
-    - name: "GCC 4.9"
-      compiler: gcc-4.9
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-4.9
-    - name: "GCC 5"
-      compiler: gcc-5
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-5
-    - name: "GCC 6"
-      compiler: gcc-6
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-6
-    - name: "GCC 8"
-      compiler: gcc-8
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-8
-    - name: "Clang 3.4"
-      compiler: clang
-      addons:
-        apt:
-          packages:
-            - clang-3.4
-    - name: "Clang 3.5"
-      compiler: clang-3.5
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.5
-          packages:
-            - clang-3.5
-    - name: "Clang 3.6"
-      compiler: clang-3.6
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.6
-          packages:
-            - clang-3.6
-    - name: "Clang 3.7"
-      compiler: clang-3.7
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.7
-          packages:
-            - clang-3.7
-    - name: "GCC on FreeBSD"
-      os: freebsd
-      compiler: gcc
-      env:
-        - CONFIGURE_OPTS='--with-compress-command=/usr/bin/gzip --with-uncompress-command=/usr/bin/gunzip --with-default-mail-command=/usr/bin/mail'
-    - name: "Clang on FreeBSD"
-      os: freebsd
-      compiler: clang
-      env:
-        # libpopt gets installed into /usr/local and Clang does not search there by default
-        - CFLAGS='-I /usr/local/include'
-        - CONFIGURE_OPTS='--with-compress-command=/usr/bin/gzip --with-uncompress-command=/usr/bin/gunzip --with-default-mail-command=/usr/bin/mail'
-        - LDFLAGS='-L /usr/local/lib'
-    - name: "Clang 11 with Sanitizers"
-      compiler: clang-11
-      dist: bionic
-      addons:
-        apt:
-          sources:
-            - sourceline: 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-11 main'
-              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
-          packages:
-            - clang-11
-      env:
-        - SANITIZER_CFLAGS='-O1 -g -fsanitize=address -fsanitize-address-use-after-scope -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=nullability -fsanitize=implicit-conversion -fsanitize=integer -fsanitize=float-divide-by-zero -fsanitize=local-bounds'
-        - ASAN_OPTIONS=strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1
-        - UBSAN_OPTIONS=print_stacktrace=1:print_summary=1:halt_on_error=1
-        - LSAN_OPTIONS=suppressions=test/leak_san_supress.txt
-    - name: "Clang 11 Analyzer"
-      compiler: clang-11
-      dist: bionic
-      addons:
-        apt:
-          sources:
-            - sourceline: 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-11 main'
-              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
-          packages:
-            - clang-11
-            - clang-tools-11
-      env: CLANG_ANALYZER=scan-build-11
 
-install:
-  - |
-    if [[ "${TRAVIS_OS_NAME}" = "linux" ]]; then
-      sudo apt-get -qq update
-      sudo apt-get -qq install libpopt-dev libselinux1-dev libacl1-dev automake rpm acl
-    fi
-  - |
-    if [[ "${TRAVIS_OS_NAME}" = "freebsd" ]]; then
-      sudo pkg install --yes coreutils gzip popt
-    fi
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "RrpJQvAISnnRiobman1arWUZdsfIL29odr7hUVSAuMg0yHc6REH3HABIdI+4JOg7Q/xiG6gF5C133wCB4qGvgexwr9BubhfxtfT3J4CIbHUciAwnsrZ9OM8FjFwI0MWhBAxukWRE/+bfMwy2uQvY8UyXK3xUKuiLrDPUAaXBduQe6vrh/P4Pl/X+MVyinEPBqw7vxZzDfEYXDLaVhGVMMHBCZS0vPsi/EegmkK5CKVdNfqo1LO91XGCcFntD8thdzjoacqKl7G/q4nT0z1R9vHok5JpBCX+yW0HlfF9cLeIuVGJo6R36bhNpMAsNeR0AEAwOvF2SSzu7IaIrspP2DKymXTFS4HCswD7nGOgqTkhEXZXab7qXdliqo3kYPKXuIRPtbyskA/X3JJKbrsn6ULhPbFUID5teVAMjNt5UCwRVSXdN6ajQ6yYZ86TJNgEbJmnymwgBWqDqoww2CO94uJ7u3K+s0Ii3iJxJk28TtqrPHsdkw/WRqd9Zh+adyP4r37qtpdtiyjscyrZhpsa2BRbgWek6lvnPZ9YqXeMcy8HXV/SyP7XMZiDuROQf+HBbvPx50h+OD8wpe119+mIGv2sveKr7C5k3Co8j3bv+99RC+NaWG8h2oFRQ7phE5XPX0sF2bN/J9z6WoDk+heqkzwj9C1kKjeHq1BVCUAc+afU="
+
+
+addons:
+  apt:
+    packages:
+      - libpopt-dev
+      - libselinux1-dev
+      - libacl1-dev
+      - automake
+  coverity_scan:
+    project:
+      name: "cgzones/logrotate"
+      description: "Build submitted via Travis CI"
+    notification_email: cgzones@googlemail.com
+    build_command_prepend: "./autogen.sh && ./configure --disable-silent-rules --with-selinux --with-acl --enable-werror && make clean"
+    build_command: "make"
+    branch_pattern: coverity_scan
+
 
 script:
-  - $CC --version
-  - ./autogen.sh
-  - |
-    if [[ "${CLANG_ANALYZER}" =~ ^scan-build.* ]]; then
-      ${CLANG_ANALYZER} -analyze-headers --status-bugs ./configure --enable-werror --disable-silent-rules
-      ${CLANG_ANALYZER} -analyze-headers --status-bugs make
-      export TRAVIS_TEST_RESULT=$?
-      travis_terminate $TRAVIS_TEST_RESULT;
-    fi
-  - ./configure --enable-werror --disable-silent-rules CFLAGS="$CFLAGS $SANITIZER_CFLAGS" $CONFIGURE_OPTS
-  - make
-  - make -j9 check || ( cat test/test-suite.log; exit 1; )
-  # scan for Sanitizer output
-  - grep -riE 'sanitizer|runtime error' test/*.log; test $? -eq 1
-  - make -j9 distcheck DISTCHECK_CONFIGURE_FLAGS="--enable-werror --disable-silent-rules $CONFIGURE_OPTS"
-  # nodeps because rpm build deps cannot be installed on debian system
-  - |
-    if [[ "${TRAVIS_OS_NAME}" = "linux" ]]; then
-      make rpm RPM_FLAGS="--nodeps"
-    fi
-  # make sure that no tabs appear in the source code files
-  - grep "$(printf '\t')" config.c log.{c,h} logrotate.{c,h}; test $? -eq 1
-  # check for whitespace issues
-  - git diff-tree --check $(git hash-object -t tree /dev/null) HEAD
-
-notifications:
-  email:
-    recipients:
-      - logrotate-owner@fedoraproject.org
-    on_success: always
-    on_failure: always
-
-# vim:et:ts=2:sw=2
+  - cat "${TRAVIS_BUILD_DIR}/cov-int/scm_log.txt"
