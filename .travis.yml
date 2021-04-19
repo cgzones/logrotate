@@ -71,6 +71,10 @@ jobs:
             - ubuntu-toolchain-r-test
           packages:
             - gcc-8
+    - name: Coveralls
+      dist: bionic
+      env:
+        - COVERALLS=yes
     - name: "Clang 3.4"
       compiler: clang
       addons:
@@ -154,6 +158,9 @@ install:
   - |
     if [[ "${TRAVIS_OS_NAME}" = "freebsd" ]]; then
       sudo pkg install --yes gzip popt
+  - |
+    if [[ ${COVERALLS} = "yes" ]]; then
+      pip install --user cpp-coveralls
     fi
 
 script:
@@ -165,6 +172,12 @@ script:
       ${CLANG_ANALYZER} -analyze-headers --status-bugs make
       export TRAVIS_TEST_RESULT=$?
       travis_terminate $TRAVIS_TEST_RESULT;
+    elif [ ${COVERALLS} = "yes" ]; then
+      ./configure --disable-silent-rules CFLAGS=--coverage
+      make
+      make check
+      coveralls --exclude tests --gcov-options '\-bflp'
+      exit 0
     fi
   - ./configure --enable-werror --disable-silent-rules CFLAGS="$CFLAGS $SANITIZER_CFLAGS" $CONFIGURE_OPTS
   - make
