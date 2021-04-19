@@ -1,0 +1,29 @@
+name: Codecov
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Codecov Build
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install Dependencies
+      run: sudo apt-get install -y libpopt-dev libselinux1-dev libacl1-dev automake acl
+
+    - name: autogen
+      run: ./autogen.sh
+
+    - name: configure
+      run: ./configure --disable-silent-rules CFLAGS=--coverage
+
+    - name: make
+      run: make
+
+    - name: make check
+      run: make check
+
+    - name: Codecov upload
+      run: bash <(curl -s https://codecov.io/bash) || echo 'Codecov failed to upload'
