@@ -57,6 +57,10 @@ static acl_type prev_acl = NULL;
 extern int asprintf(char **str, const char *fmt, ...);
 #endif
 
+#ifndef HAVE_PIPE2
+#define pipe2(pipefd, flags) pipe(pipefd)
+#endif
+
 /* Number of seconds in a day */
 #define DAY_SECONDS 86400
 
@@ -224,7 +228,7 @@ static int open_logfile(const char *path, const struct logInfo *log, int write_a
     int fd;
     struct stat sb;
 
-    fd = open(path, O_NOFOLLOW | (write_access ? O_RDWR : O_RDONLY));
+    fd = open(path, O_NOFOLLOW | O_CLOEXEC | (write_access ? O_RDWR : O_RDONLY));
     if (fd < 0)
         return fd;
 
@@ -564,7 +568,7 @@ static int createOutputFile(const char *fileName, int flags, const struct stat *
         size_t fileName_size, buf_size;
         char *backupName, *ptr;
 
-        fd = open(fileName, (flags | O_CREAT | O_EXCL | O_NOFOLLOW),
+        fd = open(fileName, (flags | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC),
                 (S_IRUSR | S_IWUSR) & sb->st_mode);
 
         if ((fd >= 0) || (errno != EEXIST))
@@ -880,7 +884,7 @@ static int compressLogFile(const char *name, const struct logInfo *log, const st
     }
 
     /* pipe used to capture stderr of the compress process */
-    if (pipe(compressPipe) < 0) {
+    if (pipe2(compressPipe, O_CLOEXEC) < 0) {
         message(MESS_ERROR, "error opening pipe for compress: %s\n",
                 strerror(errno));
         close(inFile);
@@ -1022,7 +1026,7 @@ static int mailLog(const struct logInfo *log, const char *logFile, const char *m
 
     if (uncompressCommand) {
         /* pipe used to capture output of the uncompress process */
-        if (pipe(uncompressPipe) < 0) {
+        if (pipe2(uncompressPipe, O_CLOEXEC) < 0) {
             message(MESS_ERROR, "error opening pipe for uncompress: %s\n",
                     strerror(errno));
             close(mailInput);
@@ -2656,7 +2660,7 @@ static int writeState(const char *stateFilename)
         /* explicitly asked not to write the state file */
         return 0;
 
-    fdcurr = open(stateFilename, O_RDONLY);
+    fdcurr = open(stateFilename, O_RDONLY | O_CLOEXEC);
     if (fdcurr == -1) {
         /* the statefile should exist, lockState() already created an empty
          * state file in case it did not exist initially */
@@ -2854,7 +2858,7 @@ static int readState(const char *stateFilename)
 
     message(MESS_DEBUG, "Reading state from file: %s\n", stateFilename);
 
-    fd = open(stateFilename, O_RDONLY);
+    fd = open(stateFilename, O_RDONLY | O_CLOEXEC);
     if (fd == -1) {
         /* treat non-openable file as an empty file for allocateHash() */
         f_stat.st_size = 0;
@@ -3076,7 +3080,7 @@ static int lockState(const char *stateFilename, int skip_state_lock, int wait_fo
                     stateFilename);
 
             /* create a stub state file with mode 0640 */
-            lockFd = open(stateFilename, O_CREAT | O_EXCL | O_WRONLY,
+            lockFd = open(stateFilename, O_CREAT | O_EXCL | O_WRONLY | O_CLOEXEC,
                           S_IWUSR | S_IRUSR | S_IRGRP);
             if (lockFd == -1) {
                 message(MESS_ERROR, "error creating stub state file %s: %s\n",
@@ -3194,7 +3198,7 @@ int main(int argc, const char **argv)
                     logToSyslog(1);
                 }
                 else {
-                    logFd = fopen(logFile, "w");
+                    logFd = fopen(logFile, "we");
                     if (!logFd) {
                         message(MESS_ERROR, "error opening log file %s: %s\n",
                                 logFile, strerror(errno));

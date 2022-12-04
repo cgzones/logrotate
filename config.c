@@ -479,7 +479,7 @@ static int do_mkdir(const char *path, mode_t mode, uid_t uid, gid_t gid) {
         int fd;
 
         /* newly created directory, set the owner and permissions */
-        fd = open(path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW);
+        fd = open(path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
         if (fd < 0) {
             message(MESS_ERROR, "error opening %s after creation: %s\n",
                     path, strerror(errno));
@@ -756,7 +756,7 @@ static int readConfigPath(const char *path, struct logInfo *defConfig)
         unsigned files_count = 0, i;
         DIR *dirp;
 
-        if ((here = open(".", O_RDONLY | O_DIRECTORY)) == -1) {
+        if ((here = open(".", O_RDONLY | O_DIRECTORY | O_CLOEXEC)) == -1) {
             message(MESS_ERROR, "cannot open current directory: %s\n",
                     strerror(errno));
             return 1;
@@ -1122,7 +1122,7 @@ static int readConfigFile(const char *configFile, struct logInfo *defConfig)
         .l_type = F_RDLCK
     };
 
-    fd = open(configFile, O_RDONLY);
+    fd = open(configFile, O_RDONLY | O_CLOEXEC);
     if (fd < 0) {
         message(MESS_ERROR, "failed to open config file %s: %s\n",
                 configFile, strerror(errno));
