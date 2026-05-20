@@ -1725,19 +1725,22 @@ static int readConfigFile(const char *configFile, struct logInfo *defConfig)
                             while (!isspace((unsigned char)*chptr) && *chptr != ',' && *chptr)
                                 chptr++;
 
-                            tmp = reallocarray(tabooPatterns, tabooCount + 1, sizeof(*tabooPatterns));
-                            if (tmp == NULL) {
-                                message_OOM();
-                                RAISE_ERROR();
-                            }
-                            tabooPatterns = tmp;
-                            if (asprintf(&pattern, "%.*s", (int)(chptr - endtag), endtag) < 0) {
-                                message_OOM();
-                                RAISE_ERROR();
-                            }
+                            /* skip empty patterns */
+                            if (endtag < chptr) {
+                                tmp = reallocarray(tabooPatterns, tabooCount + 1, sizeof(*tabooPatterns));
+                                if (tmp == NULL) {
+                                    message_OOM();
+                                    RAISE_ERROR();
+                                }
+                                tabooPatterns = tmp;
+                                if (asprintf(&pattern, "%.*s", (int)(chptr - endtag), endtag) < 0) {
+                                    message_OOM();
+                                    RAISE_ERROR();
+                                }
 
-                            tabooPatterns[tabooCount] = pattern;
-                            tabooCount++;
+                                tabooPatterns[tabooCount] = pattern;
+                                tabooCount++;
+                            }
 
                             endtag = chptr;
                             if (*endtag == ',')
