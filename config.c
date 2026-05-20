@@ -2344,6 +2344,12 @@ next_state: ;
         goto error;
     }
 
+    if (newlog != defConfig) {
+        message(MESS_ERROR, "%s:%d unexpected end of file, missing '}' after "
+                "log file definition\n", configFile, lineNum);
+        goto error;
+    }
+
     free(key);
 
     munmap(buf, length);
