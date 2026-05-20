@@ -1965,6 +1965,7 @@ static int readConfigFile(const char *configFile, struct logInfo *defConfig)
                         message(MESS_ERROR,
                                 "%s:%d { expected after log file name(s)\n",
                                 configFile, lineNum);
+                        free(argv);
                         free(glob_string);
                         goto error;
                     }
