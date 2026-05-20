@@ -1324,6 +1324,9 @@ static int readConfigFile(const char *configFile, struct logInfo *defConfig)
                         newlog->dateformat = isolateValue(configFile, lineNum,
                                                           key, &start, &buf,
                                                           length);
+                        if (newlog->dateformat == NULL) {
+                            RAISE_ERROR();
+                        }
                     } else if (!strcmp(key, "noolddir")) {
                         freeLogItem(oldDir);
                     } else if (!strcmp(key, "mailfirst")) {
@@ -1508,7 +1511,7 @@ static int readConfigFile(const char *configFile, struct logInfo *defConfig)
                         }
                         message(MESS_ERROR, "%s:%d bad monthly directive '%s'\n",
                                 configFile, lineNum, key);
-                        goto error;
+                        RAISE_ERROR();
                     } else if (!strcmp(key, "weekly")) {
                         unsigned weekday;
                         char tmp;
@@ -1528,7 +1531,7 @@ static int readConfigFile(const char *configFile, struct logInfo *defConfig)
                         }
                         message(MESS_ERROR, "%s:%d bad weekly directive '%s'\n",
                                 configFile, lineNum, key);
-                        goto error;
+                        RAISE_ERROR();
                     } else if (!strcmp(key, "yearly")) {
                         set_criterium(&newlog->criterium, ROT_YEARLY, &criterium_set);
                     } else if (!strcmp(key, "rotate")) {
